@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-
 from selenium import webdriver
 from time import sleep
+import re
 
 # Tuplas contendo os anos e estados pesquisados
-anos = ( '2020', '2021', '2022')
+anos = ('2020', '2021', '2022')
 estados = ('sp-sao-paulo', 'rj-rio-de-janeiro', 'mg-minas-gerais', 'es-espirito-santo')
 
 # Variáveis auxiliares para busca
@@ -28,25 +28,31 @@ def get_transferers_by_id(browser, estado, ano, attribute_name, data_name):
 
     try:
         browser.get(f'https://www.portaltransparencia.gov.br/localidades/{estado}?ano={ano}')
-        repasses = browser.find_element("id", attribute_name)
+        repasses = browser.find_element("id", attribute_name).get_attribute(data_name)
     except:
         return 0
-    if repasses:
-        repasses = str(repasses.get_attribute(data_name))
-        repasses = repasses.replace('R$', '')
-        repasses = repasses.replace('.', '')
-        repasses = repasses.replace(',', '.')
-        repasses = repasses.replace(' ', '')
-        return float(repasses)
-    else:
-        return 0
+    return repasses
+
+def parse_text_float(text):
+    """
+    Extrai o float do texto. Ex: R$1.000,00 -> 1000.00
+
+    Argumentos:
+        text: texto que contém o valor float a ser extraido
+    """
+    string = str(text)
+    string = re.sub(r'[^0-9,]', '', string)
+    string = string.replace(',', '.')
+    return float(string)
+
 
 # Percorrer as tuplas
 for estado in estados:
     print(estado)
     for ano in anos:
-        get_transferers_by_id(browser, estado, ano, id_name, data_name)
-
+        text = get_transferers_by_id(browser, estado, ano, id_name, data_name)
+        value = parse_text_float(text)
+        print(value)
 
 # Fechar o navegador
 browser.close()
