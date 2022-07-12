@@ -1,58 +1,89 @@
 #!/usr/bin/env python
 from selenium import webdriver
 from time import sleep
+import pandas as pd
+import locale
 import re
 
 # Tuplas contendo os anos e estados pesquisados
-anos = ('2020', '2021', '2022')
-estados = ('sp-sao-paulo', 'rj-rio-de-janeiro', 'mg-minas-gerais', 'es-espirito-santo')
+years = ('2020', '2021', '2022')
+states = ('sp-sao-paulo', 'rj-rio-de-janeiro', 'mg-minas-gerais', 'es-espirito-santo')
 
 # Variáveis auxiliares para busca
-id_name = 'recursosTransferidosAoGovernoEstadual'
-data_name = 'data-original-title'
+names_tags = ('recursosTransferidosAoGovernoEstadual','gastosDiretosGovernoFederalNaLocalidade', 'beneficiosNaLocalidade')
+names_data = 'data-original-title'
 
 # Instânica webdriver
 browser = webdriver.Firefox()
+request_for_minutes = 4
 
-def get_transferers_by_id(browser, estado, ano, attribute_name, data_name):
+# Arrays para os dados extraídos
+columns = ['Valores Transferidos', 'Gastos Diretos', 'Benefícios aos cidadãos', 'Total repassado']
+titles = ['São Paulo (SP)', 'Rio de Janeiro (RJ)', 'Minas Gerais (MG)', 'Espirito Santo (ES)']
+
+def get_transferers_by_id(browser, state, year, name_attribute):
     """
     Pega o valor transferido para o estado
 
     Argumentos:
         - browser = Instânica do webdriver
-        - estado = Estado pesquisado. Ex: sp-sao-paulo
-        - ano = Ano de pesquisa. Ex: 2020
-        - attribute_name = Nome do id da tag que contém o dado
-        - data_name = Nome do atributo que contém o dado
+        - state = Estado pesquisado. Ex: sp-sao-paulo
+        - year = Ano de pesquisa. Ex: 2020
+        - name_attributes = Nome do id da tag que contém o dado
+        - names_data = Nome do atributo que contém o dado
     """
 
     try:
-        browser.get(f'https://www.portaltransparencia.gov.br/localidades/{estado}?ano={ano}')
-        repasses = browser.find_element("id", attribute_name).get_attribute(data_name)
+        browser.get(f'https://www.portaltransparencia.gov.br/localidades/{state}?ano={year}')
+        value = browser.find_element("id", name_attribute).get_attribute(names_data)
     except:
         return 0
-    return repasses
+    return value
 
-def parse_text_float(text):
+def summation(texts):
     """
     Extrai o float do texto. Ex: R$1.000,00 -> 1000.00
 
     Argumentos:
-        text: texto que contém o valor float a ser extraido
+        textos: lista de textos que contém o valor float a ser extraido
     """
-    string = str(text)
-    string = re.sub(r'[^0-9,]', '', string)
-    string = string.replace(',', '.')
-    return float(string)
+    total = 0.0
+    # Configurando o locale para Reais
+    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+    for text in texts:
+        value = str(text)
+        value = re.sub(r'[^0-9,]', '', value)
+        value = value.replace(',', '.')
+        total += float(value)
+    total = locale.currency(total)
+    return total
+
+def create_table(state, rows):
+    """
+    Cria e imprime um DataFrame
+
+    Argumentos:
+        - state: Nome do estado a ser imprimido
+        - rows: Lista de linhas da tabela
+    """
+    df = pd.DataFrame(data=rows, index=years, columns=columns)
+    print('\n----------- ' + state + '-----------\n')
+    print(df)
 
 
 # Percorrer as tuplas
-for estado in estados:
-    print(estado)
-    for ano in anos:
-        text = get_transferers_by_id(browser, estado, ano, id_name, data_name)
-        value = parse_text_float(text)
-        print(value)
+for index, state in enumerate(states):
+    rows = []
+    for year in years:
+        data = []
+        for tag in names_tags:
+            data.append(get_transferers_by_id(browser, state, year, tag))
+        data.append(summation(data))
+        rows.append(data)
+        # T = 1 / f * 60s (por minuto)
+        sleep(60 / request_for_minutes)
+
+    create_table(titles[index], rows)
 
 # Fechar o navegador
 browser.close()
