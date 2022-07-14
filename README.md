@@ -3,7 +3,7 @@
 
 ### Sobre
 
-&emsp;Scraping é uma técnica de mineração dados na qual extrai informações de sites público e converte-os em dados estruturados, possibilitando analisá-los e manipulá-los.<br>
+&emsp;`Web Scraping` é uma técnica de mineração dados na qual extrai informações de sites público e converte-os em dados estruturados, possibilitando analisá-los e manipulá-los.<br>
 &emsp;Em específico neste projeto, foram estraídos os dados do portal da transparência sobre os repasses do governo federal aos estados sudestinos (ES, MG, SP, RJ) nos últimos 3 anos (2020, 2021, 2022). Em seguida, foram contabilizados e imprimidos em uma tabela (DataFrame), conforme imagem abaixo
 
 ### Bora ver como o projeto ficou?
