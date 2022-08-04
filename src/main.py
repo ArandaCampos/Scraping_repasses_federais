@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from selenium import webdriver
 from time import sleep
+from .decorator import retry
 import pandas as pd
 import locale
 import re
@@ -18,9 +19,10 @@ browser = webdriver.Firefox()
 request_for_minutes = 4
 
 # Arrays para os dados extraídos
-columns = ['Valores Transferidos', 'Gastos Diretos', 'Benefícios aos cidadãos', 'Total repassado']
-titles = ['São Paulo (SP)', 'Rio de Janeiro (RJ)', 'Minas Gerais (MG)', 'Espirito Santo (ES)']
+columns = ('Valores Transferidos', 'Gastos Diretos', 'Benefícios aos cidadãos', 'Total repassado')
+titles = ('São Paulo (SP)', 'Rio de Janeiro (RJ)', 'Minas Gerais (MG)', 'Espirito Santo (ES)')
 
+@retry(repeat=5, secounds=120)
 def get_transferers_by_id(browser, state, year, name_attribute):
     """
     Pega o valor transferido para o estado
@@ -72,18 +74,19 @@ def create_table(state, rows):
 
 
 # Percorrer as tuplas
-for index, state in enumerate(states):
-    rows = []
-    for year in years:
-        data = []
-        for tag in names_tags:
-            data.append(get_transferers_by_id(browser, state, year, tag))
-        data.append(summation(data))
-        rows.append(data)
-        # T = 1 / f * 60s (por minuto)
-        sleep(60 / request_for_minutes)
+if __name__ == '__main__':
+    for index, state in enumerate(states):
+        rows = []
+        for year in years:
+            data = []
+            for tag in names_tags:
+                data.append(get_transferers_by_id(browser, state, year, tag))
+            data.append(summation(data))
+            rows.append(data)
+            # T = 1 / f * 60s (por minuto)
+            sleep(60 / request_for_minutes)
 
-    create_table(titles[index], rows)
+        create_table(titles[index], rows)
 
 # Fechar o navegador
 browser.close()
