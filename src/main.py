@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from selenium import webdriver
 from time import sleep
-from .decorator import retry
+from decorator import retry
 import pandas as pd
 import locale
 import re
